@@ -1,8 +1,7 @@
-#include <stdlib.h>
-
 #include "catalog.h"
 #include "query.h"
 #include "stdio.h"
+#include "stdlib.h"
 
 // forward declaration
 const Status ScanSelect(const string &result,
@@ -13,183 +12,141 @@ const Status ScanSelect(const string &result,
                         const char *filter,
                         const int reclen);
 
-/**
- * FUNCTION: QU_Select
- *
- * PURPOSE:  Selects records from the specified relation.
- *
- * PARAMETERS:
- *		result 		(out)		Relation name where result is to be stored
- *		projCnt		(in)		Count of projections
- *		projNames	(in)		Information array of projections
- *		attr		(in)		Information about the attribute to be matched
- *		op			(in)		Operator to be used for matching
- *		attrValue	(in)		Value to be used for matching
- *
- * RETURN VALUES:
- *		Status  	OK         		Selected records successfully found and returned
- *                  BADCATPARM      Relation name is empty
- *                  BADSCANPARM     Error in allocating page: All buffer frames are pinned
- *                  FILEEOF         Reached the end of file while scanning for the record
- *                  BUFFEREXCEEDED  All buffer frames are pinned
- *                  HASHTBLERROR    Hash table error occurred
- *                  PAGENOTPINNED   Pin count is already 0
- *                  HASHNOTFOUND    Page is not in the buffer pool hash table
- **/
+/*
+ * Selects records from the specified relation.
+
+ * @param result - result of selection
+ * @param projCnt -
+ * Returns:
+ * 	OK on success
+ * 	an error code otherwise
+ */
 
 const Status QU_Select(const string &result,
                        const int projCnt,
                        const attrInfo projNames[],
-                       const attrInfo *attr,  // If null, unconditional scan
+                       const attrInfo *attr,
                        const Operator op,
                        const char *attrValue) {
     // Qu_Select sets up things and then calls ScanSelect to do the actual work
     cout << "Doing QU_Select " << endl;
 
     Status status;
-    AttrDesc projNames_Descs[projCnt];
+    AttrDesc attrDescArray[projCnt];  // holds desired projection
+    AttrDesc *attrDesc = NULL;        // desired search value
+    int reclen = 0;
 
+    // go through the projection list and look up each in the
+    // attr cat to get an AttrDesc structure (for offset, length, etc)
     for (int i = 0; i < projCnt; i++) {
-        status = attrCat->getInfo(projNames[i].relName, projNames[i].attrName, projNames_Descs[i]);
-        if (status != OK)
+        status = attrCat->getInfo(projNames[i].relName, projNames[i].attrName, attrDescArray[i]);
+        if (status != OK) {
             return status;
+        }
     }
 
-    AttrDesc *attrDescWhere = NULL;
-    int attrValueLen = 0;
+    // if attr is not NULL, get its info
     if (attr != NULL) {
-        attrDescWhere = new AttrDesc;
-        status = attrCat->getInfo(attr->relName, attr->attrName, *attrDescWhere);
-        attrValueLen = attrDescWhere->attrLen;
-        if (status != OK)
+        attrDesc = new AttrDesc;
+        status = attrCat->getInfo(attr->relName, attr->attrName, *attrDesc);
+        if (status != OK) {
             return status;
+        }
     }
 
-    return ScanSelect(result,
-                      projCnt,
-                      projNames_Descs,
-                      attrDescWhere,
-                      op,
-                      attrValue,
-                      attrValueLen);
+    // get output record length from attrdesc structures
+    for (int i = 0; i < projCnt; i++) {
+        reclen += attrDescArray[i].attrLen;
+    }
+
+    return ScanSelect(result, projCnt, attrDescArray, attrDesc, op, attrValue, reclen);
 }
 
-/**
- * FUNCTION: ScanSelect
- *
- * PURPOSE:  Selects records from the specified relation.
- *
- * PARAMETERS:
- *		result 			(out)		Relation name where result is to be stored
- *		projCnt			(in)		Count of projections
- *		projNames_Descs	(in)		Attribute description array of projections
- *		filterAttr		(in)		Attribute description of the attribute to be matched
- *		op				(in)		Operator to be used for matching
- *		filterValue		(in)		Value to be used for matching
- *		reclen			(in)		Length of the filter value
- *
- * RETURN VALUES:
- *		Status  	OK         		Selected records successfully found and returned
- *                  BADCATPARM      Relation name is empty
- *                  BADSCANPARM     Error in allocating page: All buffer frames are pinned
- *                  FILEEOF         Reached the end of file while scanning for the record
- *                  BUFFEREXCEEDED  All buffer frames are pinned
- *                  HASHTBLERROR    Hash table error occurred
- *                  PAGENOTPINNED   Pin count is already 0
- *                  HASHNOTFOUND    Page is not in the buffer pool hash table
- **/
 const Status ScanSelect(const string &result,
                         const int projCnt,
-                        const AttrDesc projNames_Descs[],
-                        const AttrDesc *filterAttr,
+                        const AttrDesc projNames[],
+                        const AttrDesc *attrDesc,
                         const Operator op,
-                        const char *filterValue,
+                        const char *filter,
                         const int reclen) {
     cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
-    Record rec;
-    RID rid;
-    Status status;
 
-    HeapFileScan *hfs = new HeapFileScan(projNames_Descs[0].relName, status);
+    Status status;
+    // int resultTupCnt = 0; // debugging
+    Record outputRec;
+    RID rid;
+    Record rec;
+
+    InsertFileScan resultRel(result, status);
     if (status != OK) {
-        delete hfs;
         return status;
     }
 
-    if (filterAttr == NULL) {
-        if ((status = hfs->startScan(0, 0, STRING, NULL, EQ)) != OK) {
-            delete hfs;
-            return status;
-        }
-    } else {
-        int intValue;
-        float floatValue;
-        switch (filterAttr->attrType) {
-            case STRING:
-                status = hfs->startScan(filterAttr->attrOffset, filterAttr->attrLen, (Datatype)filterAttr->attrType, filterValue, (Operator)op);
-                break;
+    outputRec.length = reclen;
+    outputRec.data = (char *)malloc(reclen);
 
-            case INTEGER:
-                intValue = atoi(filterValue);
-                status = hfs->startScan(filterAttr->attrOffset, filterAttr->attrLen, (Datatype)filterAttr->attrType, (char *)&intValue, (Operator)op);
-                break;
+    // start scan
+    cout << "Starting Scan" << endl;  // debugging
+    HeapFileScan scan(projNames[0].relName, status);
+    if (status != OK) {
+        return status;
+    }
+    cout << "Check Type" << endl;  // debugging
+    // start scan for different data types
+    int toInt;
+    float toFloat;
+    if (attrDesc == NULL) {
+        status = scan.startScan(0, 0, STRING, NULL, EQ);
+    } else if (attrDesc->attrType == STRING) {
+        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+    } else if (attrDesc->attrType == FLOAT) {
+        toFloat = atof(filter);
+        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&toFloat, op);
+    } else if (attrDesc->attrType == INTEGER) {
+        toInt = atoi(filter);
+        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&toInt, op);
+    }
 
-            case FLOAT:
-                floatValue = atof(filterValue);
-                status = hfs->startScan(filterAttr->attrOffset, filterAttr->attrLen, (Datatype)filterAttr->attrType, (char *)&floatValue, (Operator)op);
-                break;
-        }
+    // check if startScan works as expected
+    if (status != OK) {
+        return status;
+    }
 
+    cout << "scanning..." << endl;  // debugging
+    while (scan.scanNext(rid) == OK) {
+        status = scan.getRecord(rec);
         if (status != OK) {
-            delete hfs;
             return status;
         }
-    }
 
-    while ((status = hfs->scanNext(rid)) == OK) {
-        if (status == OK) {
-            status = hfs->getRecord(rec);
-            if (status != OK)
-                break;
-
-            attrInfo attrList[projCnt];
-            int value = 0;
-            char buffer[33];
-            float fValue;
-            for (int i = 0; i < projCnt; i++) {
-                AttrDesc attrDesc = projNames_Descs[i];
-
-                strcpy(attrList[i].relName, attrDesc.relName);
-                strcpy(attrList[i].attrName, attrDesc.attrName);
-                attrList[i].attrType = attrDesc.attrType;
-                attrList[i].attrLen = attrDesc.attrLen;
-
-                attrList[i].attrValue = (void *)malloc(attrDesc.attrLen);
-
-                switch (attrList[i].attrType) {
-                    case STRING:
-                        memcpy((char *)attrList[i].attrValue, (char *)(rec.data + attrDesc.attrOffset), attrDesc.attrLen);
-                        break;
-
-                    case INTEGER:
-                        memcpy(&value, (int *)(rec.data + attrDesc.attrOffset), attrDesc.attrLen);
-                        sprintf((char *)attrList[i].attrValue, "%d", value);
-                        break;
-
-                    case FLOAT:
-                        memcpy(&fValue, (float *)(rec.data + attrDesc.attrOffset), attrDesc.attrLen);
-                        sprintf((char *)attrList[i].attrValue, "%f", fValue);
-                        break;
-                }
+        int outputOffset = 0;
+        for (int i = 0; i < projCnt; i++) {
+            if (projNames[i].attrType == STRING) {
+                memcpy((char *)outputRec.data + outputOffset, (char *)rec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            } else if (projNames[i].attrType == FLOAT) {
+                memcpy((char *)outputRec.data + outputOffset, (float *)rec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            } else if (projNames[i].attrType == INTEGER) {
+                memcpy((char *)outputRec.data + outputOffset, (int *)rec.data + projNames[i].attrOffset, projNames[i].attrLen);
             }
 
-            status = QU_Insert(result, projCnt, attrList);
-            if (status != OK) {
-                delete hfs;
-                return status;
-            }
+            outputOffset += projNames[i].attrLen;
         }
+
+        RID outRID;
+        status = resultRel.insertRecord(outputRec, outRID);
     }
 
+    if (status != FILEEOF) {
+        return status;
+    }
+
+    cout << "Scan finished" << endl;  // debugging
+    status = scan.endScan();
+    if (status != OK) {
+        return status;
+    }
+
+    // resultTupCnt++;													   // debugging
+    // printf("tuple select produced %d result tuples \n", resultTupCnt); // debugging
     return OK;
 }
