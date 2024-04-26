@@ -73,7 +73,6 @@ const Status ScanSelect(const string &result,
     RID tmpRid;
     RID outRID;
     Record tmpRec;
-    char outputData[reclen];
 
     // Opening resulting relation
     InsertFileScan resRelData(result, status);
@@ -120,6 +119,7 @@ const Status ScanSelect(const string &result,
     }
 
     // Setting up outrec
+    char outputData[reclen];
     outRec.length = reclen;
     outRec.data = (void *)outputData;
 
