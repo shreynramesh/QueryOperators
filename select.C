@@ -73,8 +73,6 @@ const Status ScanSelect(const string &result,
     RID tmpRid;
     RID outRID;
     Record tmpRec;
-    int tmpInt;
-    float tmpFloat;
 
     // Opening resulting relation
     InsertFileScan *resRel = new InsertFileScan(result, status);
@@ -96,10 +94,10 @@ const Status ScanSelect(const string &result,
             case STRING:
                 status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
             case INTEGER:
-                tmpInt = atoi(filter);
+                int tmpInt = atoi(filter);
                 status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
             case FLOAT:
-                tmpFloat = atof(filter);
+                float tmpFloat = atof(filter);
                 status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
         }
     }
@@ -121,7 +119,6 @@ const Status ScanSelect(const string &result,
 
         // Looping through specified projections to make output record
         int outRecOffset = 0;
-
         for (int i = 0; i < projCnt; i++) {
             if (projNames[i].attrType == STRING) {
                 memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
