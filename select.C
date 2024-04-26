@@ -91,14 +91,20 @@ const Status ScanSelect(const string &result,
         status = scanRel->startScan(0, 0, STRING, NULL, EQ);
     } else {
         switch (attrDesc->attrType) {
-            case STRING:
+            case STRING: {
                 status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
-            case INTEGER:
+                break;
+            }
+            case INTEGER: {
                 int tmpInt = atoi(filter);
                 status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
-            case FLOAT:
+                break;
+            }
+            case FLOAT: {
                 float tmpFloat = atof(filter);
                 status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
+                break;
+            }
         }
     }
     if (status != OK) {
