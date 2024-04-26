@@ -77,15 +77,18 @@ const Status ScanSelect(const string &result,
     // Opening resulting relation
     InsertFileScan *resRel = new InsertFileScan(result, status);
     if (status != OK) {
+        delete resRel;
         return status;
     }
-    cout << "hi 1";
+
     // Opening current table
     HeapFileScan *scanRel = new HeapFileScan(projNames[0].relName, status);
     if (status != OK) {
+        delete resRel;
+        delete scanRel;
         return status;
     }
-    cout << "hi 1";
+
     // Checking if unconditional scan is required
     if (attrDesc == NULL) {
         status = scanRel->startScan(0, 0, STRING, NULL, EQ);
@@ -108,9 +111,10 @@ const Status ScanSelect(const string &result,
         }
     }
     if (status != OK) {
+        delete resRel;
+        delete scanRel;
         return status;
     }
-    cout << "hi 1";
 
     // Setting up outrec
     outRec.length = reclen;
@@ -120,6 +124,8 @@ const Status ScanSelect(const string &result,
     while ((status = scanRel->scanNext(tmpRid)) == OK) {
         status = scanRel->getRecord(tmpRec);
         if (status != OK) {
+            delete resRel;
+            delete scanRel;
             return status;
         }
 
@@ -139,15 +145,19 @@ const Status ScanSelect(const string &result,
 
         status = resRel->insertRecord(outRec, outRID);
     }
-    cout << "hi 1";
+
     // Checking if there was something wrong with the scan - should have reached EOF
     if (status != FILEEOF) {
+        delete resRel;
+        delete scanRel;
         return status;
     }
 
     // Ending scan
     status = scanRel->endScan();
     if (status != OK) {
+        delete resRel;
+        delete scanRel;
         return status;
     }
 
