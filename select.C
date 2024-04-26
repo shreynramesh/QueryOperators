@@ -81,7 +81,7 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
-
+    cout << 'hi 1';
     // Opening current table
     HeapFileScan *scanRel = new HeapFileScan(projNames[0].relName, status);
     if (status != OK) {
@@ -107,6 +107,11 @@ const Status ScanSelect(const string &result,
         return status;
     }
     cout << 'hi 1';
+
+    // Setting up outrec
+    outRec.length = reclen;
+    outRec.data = (char *)malloc(reclen);
+
     // Scanning relation
     while ((status = scanRel->scanNext(tmpRid)) == OK) {
         status = scanRel->getRecord(tmpRec);
@@ -116,6 +121,7 @@ const Status ScanSelect(const string &result,
 
         // Looping through specified projections to make output record
         int outRecOffset = 0;
+
         for (int i = 0; i < projCnt; i++) {
             if (projNames[i].attrType == STRING) {
                 memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
