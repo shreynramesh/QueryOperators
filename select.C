@@ -87,7 +87,7 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
-
+    cout << 'hi 1';
     // Checking if unconditional scan is required
     if (attrDesc == NULL) {
         status = scanRel->startScan(0, 0, STRING, NULL, EQ);
@@ -106,7 +106,7 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
-
+    cout << 'hi 1';
     // Scanning relation
     while ((status = scanRel->scanNext(tmpRid)) == OK) {
         status = scanRel->getRecord(tmpRec);
@@ -130,7 +130,7 @@ const Status ScanSelect(const string &result,
 
         status = resRel->insertRecord(outRec, outRID);
     }
-
+    cout << 'hi 1';
     // Checking if there was something wrong with the scan - should have reached EOF
     if (status != FILEEOF) {
         return status;
