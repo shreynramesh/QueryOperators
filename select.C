@@ -73,6 +73,7 @@ const Status ScanSelect(const string &result,
     RID tmpRid;
     RID outRID;
     Record tmpRec;
+    char outputData[reclen];
 
     // Opening resulting relation
     InsertFileScan resRelData(result, status);
@@ -120,7 +121,7 @@ const Status ScanSelect(const string &result,
 
     // Setting up outrec
     outRec.length = reclen;
-    outRec.data = (char *)malloc(reclen);
+    outRec.data = (void *)outputData;
 
     // Scanning relation
     while ((status = scanRel->scanNext(tmpRid)) == OK) {
@@ -134,14 +135,7 @@ const Status ScanSelect(const string &result,
         // Looping through specified projections to make output record
         int outRecOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            if (projNames[i].attrType == STRING) {
-                memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
-            } else if (projNames[i].attrType == INTEGER) {
-                memcpy((char *)outRec.data + outRecOffset, (int *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
-            } else if (projNames[i].attrType == FLOAT) {
-                memcpy((char *)outRec.data + outRecOffset, (float *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
-            }
-
+            memcpy(outputData + outRecOffset, tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
             outRecOffset += projNames[i].attrLen;
         }
 
