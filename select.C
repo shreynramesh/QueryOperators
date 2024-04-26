@@ -81,13 +81,13 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
-    cout << 'hi 1';
+    cout << "hi 1";
     // Opening current table
     HeapFileScan *scanRel = new HeapFileScan(projNames[0].relName, status);
     if (status != OK) {
         return status;
     }
-    cout << 'hi 1';
+    cout << "hi 1";
     // Checking if unconditional scan is required
     if (attrDesc == NULL) {
         status = scanRel->startScan(0, 0, STRING, NULL, EQ);
@@ -106,7 +106,7 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
-    cout << 'hi 1';
+    cout << "hi 1";
 
     // Setting up outrec
     outRec.length = reclen;
@@ -136,7 +136,7 @@ const Status ScanSelect(const string &result,
 
         status = resRel->insertRecord(outRec, outRID);
     }
-    cout << 'hi 1';
+    cout << "hi 1";
     // Checking if there was something wrong with the scan - should have reached EOF
     if (status != FILEEOF) {
         return status;
