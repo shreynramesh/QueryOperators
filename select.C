@@ -75,14 +75,16 @@ const Status ScanSelect(const string &result,
     Record tmpRec;
 
     // Opening resulting relation
-    InsertFileScan *resRel = new InsertFileScan(result, status);
+    InsertFileScan resRelData(result, status);
+    InsertFileScan *resRel = &resRelData;
     if (status != OK) {
         delete resRel;
         return status;
     }
 
     // Opening current table
-    HeapFileScan *scanRel = new HeapFileScan(projNames[0].relName, status);
+    HeapFileScan scanRelData(projNames[0].relName, status);
+    HeapFileScan *scanRel = &scanRelData;
     if (status != OK) {
         delete resRel;
         delete scanRel;
