@@ -135,7 +135,7 @@ const Status ScanSelect(const string &result,
         // Looping through specified projections to make output record
         int outRecOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            memcpy(outputData + outRecOffset, tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            memcpy(outputData + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
             outRecOffset += projNames[i].attrLen;
         }
 
