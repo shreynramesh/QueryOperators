@@ -137,16 +137,16 @@ const Status ScanSelect(const string &result,
         status = resRel.insertRecord(outRec, outRID);
     }
 
-    // // Checking if there was something wrong with the scan - should have reached EOF
-    // if (status != FILEEOF) {
-    //     return status;
-    // }
+    // Checking if there was something wrong with the scan - should have reached EOF
+    if (status != FILEEOF) {
+        return status;
+    }
 
-    // // Ending scan
-    // status = scanRel.endScan();
-    // if (status != OK) {
-    //     return status;
-    // }
+    // Ending scan
+    status = scanRel.endScan();
+    if (status != OK) {
+        return status;
+    }
 
     return OK;
 }
