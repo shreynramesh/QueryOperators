@@ -117,7 +117,7 @@ const Status ScanSelect(const string &result,
 
     // Setting up outrec
     outRec.length = reclen;
-
+    cout << "here";
     // Scanning relation
     while ((status = scanRel.scanNext(tmpRid)) == OK) {
         status = scanRel.getRecord(tmpRec);
