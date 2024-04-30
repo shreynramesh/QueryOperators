@@ -76,7 +76,6 @@ const Status ScanSelect(const string &result,
     Record tmpRec;
     Record outRec;
     RID tmpRid;
-    RID outRID;
 
     // Opening resulting relation
     InsertFileScan resRel(result, status);
@@ -134,6 +133,7 @@ const Status ScanSelect(const string &result,
             outRecOffset += projNames[i].attrLen;
         }
 
+        RID outRID;
         status = resRel.insertRecord(outRec, outRID);
     }
 
