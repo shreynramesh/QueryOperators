@@ -71,7 +71,7 @@ const Status ScanSelect(const string &result,
                         const char *filter,
                         const int reclen) {
     cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
-
+    cout << "here";
     Status status;
     Record tmpRec;
     Record outRec;
