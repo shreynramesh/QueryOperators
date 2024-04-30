@@ -70,7 +70,7 @@ const Status ScanSelect(const string &result,
                         const Operator op,
                         const char *filter,
                         const int reclen) {
-    cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
+    // cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
 
     Status status;
     Record tmpRec;
