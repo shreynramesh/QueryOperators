@@ -89,11 +89,12 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
-
+    cout << "here";
     // Checking if unconditional scan is required
     if (attrDesc == NULL) {
         status = scanRel.startScan(0, 0, STRING, NULL, EQ);
     } else {
+        cout << "here";
         switch (attrDesc->attrType) {
             case STRING: {
                 status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
@@ -110,6 +111,7 @@ const Status ScanSelect(const string &result,
                 break;
             }
         }
+        cout << "here";
     }
     if (status != OK) {
         return status;
@@ -117,7 +119,7 @@ const Status ScanSelect(const string &result,
 
     // Setting up outrec
     outRec.length = reclen;
-    cout << "here";
+
     // Scanning relation
     while ((status = scanRel.scanNext(tmpRid)) == OK) {
         status = scanRel.getRecord(tmpRec);
