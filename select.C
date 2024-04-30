@@ -90,30 +90,30 @@ const Status ScanSelect(const string &result,
         return status;
     }
 
-    // // Checking if unconditional scan is required
-    // if (attrDesc == NULL) {
-    //     status = scanRel.startScan(0, 0, STRING, NULL, EQ);
-    // } else {
-    //     switch (attrDesc->attrType) {
-    //         case STRING: {
-    //             status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
-    //             break;
-    //         }
-    //         case INTEGER: {
-    //             int tmpInt = atoi(filter);
-    //             status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
-    //             break;
-    //         }
-    //         case FLOAT: {
-    //             float tmpFloat = atof(filter);
-    //             status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
-    //             break;
-    //         }
-    //     }
-    // }
-    // if (status != OK) {
-    //     return status;
-    // }
+    // Checking if unconditional scan is required
+    if (attrDesc == NULL) {
+        status = scanRel.startScan(0, 0, STRING, NULL, EQ);
+    } else {
+        switch (attrDesc->attrType) {
+            case STRING: {
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+                break;
+            }
+            case INTEGER: {
+                int tmpInt = atoi(filter);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
+                break;
+            }
+            case FLOAT: {
+                float tmpFloat = atof(filter);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
+                break;
+            }
+        }
+    }
+    if (status != OK) {
+        return status;
+    }
 
     // // Setting up outrec
     // outRec.length = reclen;
