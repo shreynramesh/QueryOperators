@@ -14,9 +14,7 @@ const Status ScanSelect(const string &result,
 
 /*
  * Selects records from the specified relation.
-
- * @param result - result of selection
- * @param projCnt -
+ *
  * Returns:
  * 	OK on success
  * 	an error code otherwise
@@ -28,24 +26,28 @@ const Status QU_Select(const string &result,
                        const attrInfo *attr,
                        const Operator op,
                        const char *attrValue) {
+    Status status;
+    AttrDesc attrDescArray[projCnt];
+    AttrDesc *attrDesc = NULL;
+    int reclen = 0;
+
     // Qu_Select sets up things and then calls ScanSelect to do the actual work
     cout << "Doing QU_Select " << endl;
 
-    Status status;
-    AttrDesc attrDescArray[projCnt];  // holds desired projection
-    AttrDesc *attrDesc = NULL;        // desired search value
-    int reclen = 0;
-
     // go through the projection list and look up each in the
     // attr cat to get an AttrDesc structure (for offset, length, etc)
+
     for (int i = 0; i < projCnt; i++) {
-        status = attrCat->getInfo(projNames[i].relName, projNames[i].attrName, attrDescArray[i]);
+        Status status = attrCat->getInfo(projNames[i].relName,
+                                         projNames[i].attrName,
+                                         attrDescArray[i]);
         if (status != OK) {
             return status;
         }
+        // reclen += attrDescArray[i].attrLen;
     }
 
-    // if attr is not NULL, get its info
+    // get AttrDesc structure for the select attribute
     if (attr != NULL) {
         attrDesc = new AttrDesc;
         status = attrCat->getInfo(attr->relName, attr->attrName, *attrDesc);
@@ -54,7 +56,6 @@ const Status QU_Select(const string &result,
         }
     }
 
-    // get output record length from attrdesc structures
     for (int i = 0; i < projCnt; i++) {
         reclen += attrDescArray[i].attrLen;
     }
@@ -69,77 +70,83 @@ const Status ScanSelect(const string &result,
                         const Operator op,
                         const char *filter,
                         const int reclen) {
-    cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
+    // cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
 
     Status status;
-    // int resultTupCnt = 0; // debugging
-    Record outputRec;
-    RID rid;
-    Record rec;
+    Record tmpRec;
+    Record outRec;
+    RID tmpRid;
 
-    InsertFileScan resultRel(result, status);
+    // Opening resulting relation
+    InsertFileScan resRel(result, status);
     if (status != OK) {
         return status;
     }
 
-    outputRec.length = reclen;
-    outputRec.data = (char *)malloc(reclen);
-
-    // start scan
-    cout << "Starting Scan" << endl;  // debugging
-    HeapFileScan scan(projNames[0].relName, status);
+    // Opening current table
+    HeapFileScan scanRel(projNames[0].relName, status);
     if (status != OK) {
         return status;
     }
-    cout << "Check Type" << endl;  // debugging
-    // start scan for different data types
-    int toInt;
-    float toFloat;
+
+    // Checking if unconditional scan is required
     if (attrDesc == NULL) {
-        status = scan.startScan(0, 0, STRING, NULL, EQ);
-    } else if (attrDesc->attrType == STRING) {
-        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
-    } else if (attrDesc->attrType == FLOAT) {
-        toFloat = atof(filter);
-        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&toFloat, op);
-    } else if (attrDesc->attrType == INTEGER) {
-        toInt = atoi(filter);
-        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&toInt, op);
+        status = scanRel.startScan(0, 0, STRING, NULL, EQ);
+    } else {
+        switch (attrDesc->attrType) {
+            case STRING: {
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+                break;
+            }
+            case INTEGER: {
+                int tmpInt = atoi(filter);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
+                break;
+            }
+            case FLOAT: {
+                float tmpFloat = atof(filter);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
+                break;
+            }
+        }
     }
-
-    // check if startScan works as expected
     if (status != OK) {
         return status;
     }
 
-    cout << "scanning..." << endl;  // debugging
-    while (scan.scanNext(rid) == OK) {
-        status = scan.getRecord(rec);
+    // Setting up outrec
+    char outputData[reclen];
+    outRec.length = reclen;
+    outRec.data = outputData;
+
+    // Scanning relation
+    while ((status = scanRel.scanNext(tmpRid)) == OK) {
+        status = scanRel.getRecord(tmpRec);
         if (status != OK) {
             return status;
         }
 
-        int outputOffset = 0;
+        // Looping through specified projections to make output record
+        int outRecOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            memcpy((char *)outputRec.data + outputOffset, (char *)rec.data + projNames[i].attrOffset, projNames[i].attrLen);
-            outputOffset += projNames[i].attrLen;
+            memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            outRecOffset += projNames[i].attrLen;
         }
 
         RID outRID;
-        status = resultRel.insertRecord(outputRec, outRID);
+        status = resRel.insertRecord(outRec, outRID);
     }
 
+    // Checking if there was something wrong with the scan - should have reached EOF
     if (status != FILEEOF) {
         return status;
     }
 
-    cout << "Scan finished" << endl;  // debugging
-    status = scan.endScan();
+    // Ending scan
+    status = scanRel.endScan();
     if (status != OK) {
         return status;
     }
 
-    // resultTupCnt++;													   // debugging
-    // printf("tuple select produced %d result tuples \n", resultTupCnt); // debugging
     return OK;
 }
