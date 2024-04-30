@@ -77,13 +77,13 @@ const Status ScanSelect(const string &result,
     Record outRec;
     RID tmpRid;
     // RID outRID;
-
+    cout << "here";
     // Opening resulting relation
     InsertFileScan resRel(result, status);
     if (status != OK) {
         return status;
     }
-
+    cout << "here";
     // Opening current table
     HeapFileScan scanRel(projNames[0].relName, status);
     if (status != OK) {
