@@ -78,73 +78,73 @@ const Status ScanSelect(const string &result,
     RID tmpRid;
     RID outRID;
 
-    // Opening resulting relation
-    InsertFileScan resRel(result, status);
-    if (status != OK) {
-        return status;
-    }
+    // // Opening resulting relation
+    // InsertFileScan resRel(result, status);
+    // if (status != OK) {
+    //     return status;
+    // }
 
-    // Opening current table
-    HeapFileScan scanRel(projNames[0].relName, status);
-    if (status != OK) {
-        return status;
-    }
+    // // Opening current table
+    // HeapFileScan scanRel(projNames[0].relName, status);
+    // if (status != OK) {
+    //     return status;
+    // }
 
-    // Checking if unconditional scan is required
-    if (attrDesc == NULL) {
-        status = scanRel.startScan(0, 0, STRING, NULL, EQ);
-    } else {
-        switch (attrDesc->attrType) {
-            case STRING: {
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
-                break;
-            }
-            case INTEGER: {
-                int tmpInt = atoi(filter);
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
-                break;
-            }
-            case FLOAT: {
-                float tmpFloat = atof(filter);
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
-                break;
-            }
-        }
-    }
-    if (status != OK) {
-        return status;
-    }
+    // // Checking if unconditional scan is required
+    // if (attrDesc == NULL) {
+    //     status = scanRel.startScan(0, 0, STRING, NULL, EQ);
+    // } else {
+    //     switch (attrDesc->attrType) {
+    //         case STRING: {
+    //             status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+    //             break;
+    //         }
+    //         case INTEGER: {
+    //             int tmpInt = atoi(filter);
+    //             status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
+    //             break;
+    //         }
+    //         case FLOAT: {
+    //             float tmpFloat = atof(filter);
+    //             status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
+    //             break;
+    //         }
+    //     }
+    // }
+    // if (status != OK) {
+    //     return status;
+    // }
 
-    // Setting up outrec
-    outRec.length = reclen;
+    // // Setting up outrec
+    // outRec.length = reclen;
 
-    // Scanning relation
-    while ((status = scanRel.scanNext(tmpRid)) == OK) {
-        status = scanRel.getRecord(tmpRec);
-        if (status != OK) {
-            return status;
-        }
+    // // Scanning relation
+    // while ((status = scanRel.scanNext(tmpRid)) == OK) {
+    //     status = scanRel.getRecord(tmpRec);
+    //     if (status != OK) {
+    //         return status;
+    //     }
 
-        // Looping through specified projections to make output record
-        int outRecOffset = 0;
-        for (int i = 0; i < projCnt; i++) {
-            memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
-            outRecOffset += projNames[i].attrLen;
-        }
+    //     // Looping through specified projections to make output record
+    //     int outRecOffset = 0;
+    //     for (int i = 0; i < projCnt; i++) {
+    //         memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+    //         outRecOffset += projNames[i].attrLen;
+    //     }
 
-        status = resRel.insertRecord(outRec, outRID);
-    }
+    //     status = resRel.insertRecord(outRec, outRID);
+    // }
 
-    // Checking if there was something wrong with the scan - should have reached EOF
-    if (status != FILEEOF) {
-        return status;
-    }
+    // // Checking if there was something wrong with the scan - should have reached EOF
+    // if (status != FILEEOF) {
+    //     return status;
+    // }
 
-    // Ending scan
-    status = scanRel.endScan();
-    if (status != OK) {
-        return status;
-    }
+    // // Ending scan
+    // status = scanRel.endScan();
+    // if (status != OK) {
+    //     return status;
+    // }
 
     return OK;
 }
