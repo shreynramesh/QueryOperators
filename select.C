@@ -84,11 +84,11 @@ const Status ScanSelect(const string &result,
         return status;
     }
 
-    // // Opening current table
-    // HeapFileScan scanRel(projNames[0].relName, status);
-    // if (status != OK) {
-    //     return status;
-    // }
+    // Opening current table
+    HeapFileScan scanRel(projNames[0].relName, status);
+    if (status != OK) {
+        return status;
+    }
 
     // // Checking if unconditional scan is required
     // if (attrDesc == NULL) {
