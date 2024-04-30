@@ -75,46 +75,39 @@ const Status ScanSelect(const string &result,
     Record tmpRec;
 
     // Opening resulting relation
-    InsertFileScan resRelData(result, status);
-    InsertFileScan *resRel = &resRelData;
+    InsertFileScan resRel(result, status);
     if (status != OK) {
-        delete resRel;
         return status;
     }
 
     // Opening current table
-    HeapFileScan scanRelData(projNames[0].relName, status);
-    HeapFileScan *scanRel = &scanRelData;
+    HeapFileScan scanRel(projNames[0].relName, status);
     if (status != OK) {
-        delete resRel;
-        delete scanRel;
         return status;
     }
 
     // Checking if unconditional scan is required
     if (attrDesc == NULL) {
-        status = scanRel->startScan(0, 0, STRING, NULL, EQ);
+        status = scanRel.startScan(0, 0, STRING, NULL, EQ);
     } else {
         switch (attrDesc->attrType) {
             case STRING: {
-                status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
                 break;
             }
             case INTEGER: {
                 int tmpInt = atoi(filter);
-                status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
                 break;
             }
             case FLOAT: {
                 float tmpFloat = atof(filter);
-                status = scanRel->startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
                 break;
             }
         }
     }
     if (status != OK) {
-        delete resRel;
-        delete scanRel;
         return status;
     }
 
@@ -124,36 +117,30 @@ const Status ScanSelect(const string &result,
     outRec.data = (void *)outputData;
 
     // Scanning relation
-    while ((status = scanRel->scanNext(tmpRid)) == OK) {
-        status = scanRel->getRecord(tmpRec);
+    while ((status = scanRel.scanNext(tmpRid)) == OK) {
+        status = scanRel.getRecord(tmpRec);
         if (status != OK) {
-            delete resRel;
-            delete scanRel;
             return status;
         }
 
         // Looping through specified projections to make output record
         int outRecOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            memcpy(outputData + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            memcpy((char *)outputData + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
             outRecOffset += projNames[i].attrLen;
         }
 
-        status = resRel->insertRecord(outRec, outRID);
+        status = resRel.insertRecord(outRec, outRID);
     }
 
     // Checking if there was something wrong with the scan - should have reached EOF
     if (status != FILEEOF) {
-        delete resRel;
-        delete scanRel;
         return status;
     }
 
     // Ending scan
-    status = scanRel->endScan();
+    status = scanRel.endScan();
     if (status != OK) {
-        delete resRel;
-        delete scanRel;
         return status;
     }
 
