@@ -78,11 +78,11 @@ const Status ScanSelect(const string &result,
     RID tmpRid;
     RID outRID;
 
-    // // Opening resulting relation
-    // InsertFileScan resRel(result, status);
-    // if (status != OK) {
-    //     return status;
-    // }
+    // Opening resulting relation
+    InsertFileScan resRel(result, status);
+    if (status != OK) {
+        return status;
+    }
 
     // // Opening current table
     // HeapFileScan scanRel(projNames[0].relName, status);
