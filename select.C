@@ -71,30 +71,29 @@ const Status ScanSelect(const string &result,
                         const char *filter,
                         const int reclen) {
     cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
-    cout << "here";
+
     Status status;
     Record tmpRec;
     Record outRec;
     RID tmpRid;
-    // RID outRID;
-    cout << "here";
+    RID outRID;
+
     // Opening resulting relation
     InsertFileScan resRel(result, status);
     if (status != OK) {
         return status;
     }
-    cout << "here";
+
     // Opening current table
     HeapFileScan scanRel(projNames[0].relName, status);
     if (status != OK) {
         return status;
     }
-    cout << "here";
+
     // Checking if unconditional scan is required
     if (attrDesc == NULL) {
         status = scanRel.startScan(0, 0, STRING, NULL, EQ);
     } else {
-        cout << "here";
         switch (attrDesc->attrType) {
             case STRING: {
                 status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
@@ -111,7 +110,6 @@ const Status ScanSelect(const string &result,
                 break;
             }
         }
-        cout << "here";
     }
     if (status != OK) {
         return status;
@@ -134,7 +132,6 @@ const Status ScanSelect(const string &result,
             outRecOffset += projNames[i].attrLen;
         }
 
-        RID outRID;
         status = resRel.insertRecord(outRec, outRID);
     }
 
