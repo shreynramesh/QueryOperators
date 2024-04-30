@@ -44,7 +44,7 @@ const Status QU_Select(const string &result,
         if (status != OK) {
             return status;
         }
-        reclen += attrDescArray[i].attrLen;
+        // reclen += attrDescArray[i].attrLen;
     }
 
     // get AttrDesc structure for the select attribute
@@ -54,6 +54,10 @@ const Status QU_Select(const string &result,
         if (status != OK) {
             return status;
         }
+    }
+
+    for (int i = 0; i < projCnt; i++) {
+        reclen += attrDescArray[i].attrLen;
     }
 
     return ScanSelect(result, projCnt, attrDescArray, attrDesc, op, attrValue, reclen);
@@ -69,10 +73,10 @@ const Status ScanSelect(const string &result,
     cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
 
     Status status;
+    Record tmpRec;
     Record outRec;
     RID tmpRid;
-    RID outRID;
-    Record tmpRec;
+    // RID outRID;
 
     // Opening resulting relation
     InsertFileScan resRel(result, status);
@@ -112,9 +116,7 @@ const Status ScanSelect(const string &result,
     }
 
     // Setting up outrec
-    char outputData[reclen];
     outRec.length = reclen;
-    outRec.data = (void *)outputData;
 
     // Scanning relation
     while ((status = scanRel.scanNext(tmpRid)) == OK) {
@@ -126,10 +128,11 @@ const Status ScanSelect(const string &result,
         // Looping through specified projections to make output record
         int outRecOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            memcpy((char *)outputData + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
             outRecOffset += projNames[i].attrLen;
         }
 
+        RID outRID;
         status = resRel.insertRecord(outRec, outRID);
     }
 
