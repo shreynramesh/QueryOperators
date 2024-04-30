@@ -116,24 +116,26 @@ const Status ScanSelect(const string &result,
     }
 
     // Setting up outrec
+    char outputData[reclen];
     outRec.length = reclen;
+    outRec.data = outputData;
 
-    // // Scanning relation
-    // while ((status = scanRel.scanNext(tmpRid)) == OK) {
-    //     status = scanRel.getRecord(tmpRec);
-    //     if (status != OK) {
-    //         return status;
-    //     }
+    // Scanning relation
+    while ((status = scanRel.scanNext(tmpRid)) == OK) {
+        status = scanRel.getRecord(tmpRec);
+        if (status != OK) {
+            return status;
+        }
 
-    //     // Looping through specified projections to make output record
-    //     int outRecOffset = 0;
-    //     for (int i = 0; i < projCnt; i++) {
-    //         memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
-    //         outRecOffset += projNames[i].attrLen;
-    //     }
+        // Looping through specified projections to make output record
+        int outRecOffset = 0;
+        for (int i = 0; i < projCnt; i++) {
+            memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            outRecOffset += projNames[i].attrLen;
+        }
 
-    //     status = resRel.insertRecord(outRec, outRID);
-    // }
+        status = resRel.insertRecord(outRec, outRID);
+    }
 
     // // Checking if there was something wrong with the scan - should have reached EOF
     // if (status != FILEEOF) {
