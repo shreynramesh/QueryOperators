@@ -93,21 +93,18 @@ const Status ScanSelect(const string &result,
     if (attrDesc == NULL) {
         status = scanRel.startScan(0, 0, STRING, NULL, EQ);
     } else {
-        switch (attrDesc->attrType) {
-            case STRING: {
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
-                break;
-            }
-            case INTEGER: {
-                int tmpInt = atoi(filter);
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
-                break;
-            }
-            case FLOAT: {
-                float tmpFloat = atof(filter);
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
-                break;
-            }
+        int toInt;
+        float toFloat;
+        if (attrDesc == NULL) {
+            status = scanRel.startScan(0, 0, STRING, NULL, EQ);
+        } else if (attrDesc->attrType == STRING) {
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+        } else if (attrDesc->attrType == FLOAT) {
+            toFloat = atof(filter);
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&toFloat, op);
+        } else if (attrDesc->attrType == INTEGER) {
+            toInt = atoi(filter);
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&toInt, op);
         }
     }
     if (status != OK) {
