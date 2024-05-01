@@ -84,11 +84,6 @@ const Status ScanSelect(const string &result,
         return status;
     }
 
-    // Setting up outrec
-    char outputData[reclen];
-    outRec.length = reclen;
-    outRec.data = outputData;
-
     // start scan
     cout << "Starting Scan" << endl;  // debugging
     HeapFileScan scan(projNames[0].relName, status);
@@ -115,6 +110,11 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
+
+    // Setting up outrec
+    char outputData[reclen];
+    outRec.length = reclen;
+    outRec.data = outputData;
 
     cout << "scanning..." << endl;  // debugging
     while (scan.scanNext(tmpRID) == OK) {
