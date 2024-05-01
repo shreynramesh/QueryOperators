@@ -90,8 +90,8 @@ const Status ScanSelect(const string &result,
         return status;
     }
 
-    int toInt;
-    float toFloat;
+    int tmpInt;
+    float tmpFloat;
 
     switch (attrDesc == NULL ? -1 : attrDesc->attrType) {
         case -1:
@@ -101,12 +101,12 @@ const Status ScanSelect(const string &result,
             status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
             break;
         case FLOAT:
-            toFloat = atof(filter);
-            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&toFloat, op);
+            tmpFloat = atof(filter);
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
             break;
         case INTEGER:
-            toInt = atoi(filter);
-            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&toInt, op);
+            tmpInt = atoi(filter);
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
             break;
     }
 
@@ -120,34 +120,34 @@ const Status ScanSelect(const string &result,
     outRec.length = reclen;
     outRec.data = outputData;
 
-    cout << "scanning..." << endl;  // debugging
-    while (scanRel.scanNext(tmpRID) == OK) {
+    // Scanning relation
+    while ((status = scanRel.scanNext(tmpRID)) == OK) {
         status = scanRel.getRecord(tmpRec);
         if (status != OK) {
             return status;
         }
 
-        int outputOffset = 0;
+        // Looping through specified projections to make output record
+        int outRecOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            memcpy((char *)outRec.data + outputOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
-            outputOffset += projNames[i].attrLen;
+            memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            outRecOffset += projNames[i].attrLen;
         }
 
         RID outRID;
         status = resRel.insertRecord(outRec, outRID);
     }
 
+    // Checking if there was something wrong with the scan - should have reached EOF
     if (status != FILEEOF) {
         return status;
     }
 
-    cout << "Scan finished" << endl;  // debugging
+    // Ending scan
     status = scanRel.endScan();
     if (status != OK) {
         return status;
     }
 
-    // resultTupCnt++;													   // debugging
-    // printf("tuple select produced %d result tuples \n", resultTupCnt); // debugging
     return OK;
 }
