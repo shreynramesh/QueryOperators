@@ -28,24 +28,28 @@ const Status QU_Select(const string &result,
                        const attrInfo *attr,
                        const Operator op,
                        const char *attrValue) {
+    Status status;
+    AttrDesc attrDescArray[projCnt];
+    AttrDesc *attrDesc = NULL;
+    int reclen = 0;
+
     // Qu_Select sets up things and then calls ScanSelect to do the actual work
     cout << "Doing QU_Select " << endl;
 
-    Status status;
-    AttrDesc attrDescArray[projCnt];  // holds desired projection
-    AttrDesc *attrDesc = NULL;        // desired search value
-    int reclen = 0;
-
     // go through the projection list and look up each in the
     // attr cat to get an AttrDesc structure (for offset, length, etc)
+
     for (int i = 0; i < projCnt; i++) {
-        status = attrCat->getInfo(projNames[i].relName, projNames[i].attrName, attrDescArray[i]);
+        Status status = attrCat->getInfo(projNames[i].relName,
+                                         projNames[i].attrName,
+                                         attrDescArray[i]);
         if (status != OK) {
             return status;
         }
+        // reclen += attrDescArray[i].attrLen;
     }
 
-    // if attr is not NULL, get its info
+    // get AttrDesc structure for the select attribute
     if (attr != NULL) {
         attrDesc = new AttrDesc;
         status = attrCat->getInfo(attr->relName, attr->attrName, *attrDesc);
@@ -54,7 +58,6 @@ const Status QU_Select(const string &result,
         }
     }
 
-    // get output record length from attrdesc structures
     for (int i = 0; i < projCnt; i++) {
         reclen += attrDescArray[i].attrLen;
     }
