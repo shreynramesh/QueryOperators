@@ -85,28 +85,32 @@ const Status ScanSelect(const string &result,
     }
 
     // start scan
-    cout << "Starting Scan" << endl;  // debugging
-    HeapFileScan scan(projNames[0].relName, status);
+    HeapFileScan scanRel(projNames[0].relName, status);
     if (status != OK) {
         return status;
     }
-    cout << "Check Type" << endl;  // debugging
-    // start scan for different data types
-    int toInt;
-    float toFloat;
-    if (attrDesc == NULL) {
-        status = scan.startScan(0, 0, STRING, NULL, EQ);
-    } else if (attrDesc->attrType == STRING) {
-        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
-    } else if (attrDesc->attrType == FLOAT) {
-        toFloat = atof(filter);
-        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&toFloat, op);
-    } else if (attrDesc->attrType == INTEGER) {
-        toInt = atoi(filter);
-        status = scan.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&toInt, op);
-    }
 
-    // check if startScan works as expected
+    // Checking if unconditional scan is required
+    if (attrDesc == NULL) {
+        status = scanRel.startScan(0, 0, STRING, NULL, EQ);
+    } else {
+        switch (attrDesc->attrType) {
+            case STRING: {
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+                break;
+            }
+            case INTEGER: {
+                int tmpInt = atoi(filter);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
+                break;
+            }
+            case FLOAT: {
+                float tmpFloat = atof(filter);
+                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
+                break;
+            }
+        }
+    }
     if (status != OK) {
         return status;
     }
@@ -117,8 +121,8 @@ const Status ScanSelect(const string &result,
     outRec.data = outputData;
 
     cout << "scanning..." << endl;  // debugging
-    while (scan.scanNext(tmpRID) == OK) {
-        status = scan.getRecord(tmpRec);
+    while (scanRel.scanNext(tmpRID) == OK) {
+        status = scanRel.getRecord(tmpRec);
         if (status != OK) {
             return status;
         }
@@ -138,7 +142,7 @@ const Status ScanSelect(const string &result,
     }
 
     cout << "Scan finished" << endl;  // debugging
-    status = scan.endScan();
+    status = scanRel.endScan();
     if (status != OK) {
         return status;
     }
