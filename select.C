@@ -90,29 +90,27 @@ const Status ScanSelect(const string &result,
         return status;
     }
 
-    // Checking if unconditional scan is required
-    if (attrDesc == NULL) {
-        status = scanRel.startScan(0, 0, STRING, NULL, EQ);
-    } else {
-        switch (attrDesc->attrType) {
-            case STRING: {
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
-                break;
-            }
-            case INTEGER: {
-                int tmpInt = atoi(filter);
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&tmpInt, op);
-                break;
-            }
-            case FLOAT: {
-                float tmpFloat = atof(filter);
-                status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
-                break;
-            }
-            default:
-                break;
-        }
+    int toInt;
+    float toFloat;
+
+    switch (attrDesc == NULL ? -1 : attrDesc->attrType) {
+        case -1:
+            status = scanRel.startScan(0, 0, STRING, NULL, EQ);
+            break;
+        case STRING:
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, STRING, filter, op);
+            break;
+        case FLOAT:
+            toFloat = atof(filter);
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&toFloat, op);
+            break;
+        case INTEGER:
+            toInt = atoi(filter);
+            status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, INTEGER, (char *)&toInt, op);
+            break;
     }
+
+    // Check if startScan works as expected
     if (status != OK) {
         return status;
     }
