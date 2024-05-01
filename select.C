@@ -79,17 +79,19 @@ const Status ScanSelect(const string &result,
     Record outRec;
     RID tmpRID;
 
+    // Opening resulting relation
     InsertFileScan resRel(result, status);
     if (status != OK) {
         return status;
     }
 
-    // start scan
+    // Opening current table
     HeapFileScan scanRel(projNames[0].relName, status);
     if (status != OK) {
         return status;
     }
 
+    // Checking if unconditional scan is required & other types
     int tmpInt;
     float tmpFloat;
 
