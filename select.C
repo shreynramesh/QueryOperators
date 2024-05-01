@@ -75,18 +75,19 @@ const Status ScanSelect(const string &result,
     cout << "Doing HeapFileScan Selection using ScanSelect()" << endl;
 
     Status status;
-    // int resultTupCnt = 0; // debugging
-    Record outputRec;
-    RID rid;
-    Record rec;
+    Record tmpRec;
+    Record outRec;
+    RID tmpRID;
 
-    InsertFileScan resultRel(result, status);
+    InsertFileScan resRel(result, status);
     if (status != OK) {
         return status;
     }
 
-    outputRec.length = reclen;
-    outputRec.data = (char *)malloc(reclen);
+    // Setting up outrec
+    char outputData[reclen];
+    outRec.length = reclen;
+    outRec.data = outputData;
 
     // start scan
     cout << "Starting Scan" << endl;  // debugging
@@ -116,20 +117,20 @@ const Status ScanSelect(const string &result,
     }
 
     cout << "scanning..." << endl;  // debugging
-    while (scan.scanNext(rid) == OK) {
-        status = scan.getRecord(rec);
+    while (scan.scanNext(tmpRID) == OK) {
+        status = scan.getRecord(tmpRec);
         if (status != OK) {
             return status;
         }
 
         int outputOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            memcpy((char *)outputRec.data + outputOffset, (char *)rec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            memcpy((char *)outRec.data + outputOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
             outputOffset += projNames[i].attrLen;
         }
 
         RID outRID;
-        status = resultRel.insertRecord(outputRec, outRID);
+        status = resRel.insertRecord(outRec, outRID);
     }
 
     if (status != FILEEOF) {
