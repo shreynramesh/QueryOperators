@@ -117,17 +117,16 @@ const Status ScanSelect(const string &result,
     outRec.data = outputData;
 
     // Scanning relation
-    while ((status = scanRel.scanNext(tmpRid)) == OK) {
+    while (scanRel.scanNext(tmpRid) == OK) {
         status = scanRel.getRecord(tmpRec);
         if (status != OK) {
             return status;
         }
 
-        // Looping through specified projections to make output record
-        int outRecOffset = 0;
+        int outputOffset = 0;
         for (int i = 0; i < projCnt; i++) {
-            memcpy((char *)outRec.data + outRecOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
-            outRecOffset += projNames[i].attrLen;
+            memcpy((char *)outRec.data + outputOffset, (char *)tmpRec.data + projNames[i].attrOffset, projNames[i].attrLen);
+            outputOffset += projNames[i].attrLen;
         }
 
         RID outRID;
