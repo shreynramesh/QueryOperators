@@ -83,6 +83,11 @@ const Status ScanSelect(const string &result,
         return status;
     }
 
+    // Setting up outrec
+    char outputData[reclen];
+    outRec.length = reclen;
+    outRec.data = outputData;
+
     // Opening current table
     HeapFileScan scanRel(projNames[0].relName, status);
     if (status != OK) {
@@ -110,11 +115,6 @@ const Status ScanSelect(const string &result,
     if (status != OK) {
         return status;
     }
-
-    // Setting up outrec
-    char outputData[reclen];
-    outRec.length = reclen;
-    outRec.data = outputData;
 
     // Scanning relation
     while (scanRel.scanNext(tmpRid) == OK) {
