@@ -109,6 +109,8 @@ const Status ScanSelect(const string &result,
                 status = scanRel.startScan(attrDesc->attrOffset, attrDesc->attrLen, FLOAT, (char *)&tmpFloat, op);
                 break;
             }
+            default:
+                break;
         }
     }
     if (status != OK) {
